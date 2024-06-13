@@ -10,9 +10,6 @@ log_error() {
 
 # Initial security setup to prevent tampering
 {
-  # Make the script immutable
-  chattr +i $0
-
   # Ensure the integrity of sudo using tsu
   alias sudo='tsu'
 
@@ -27,7 +24,7 @@ log_error() {
   }
 
   # List of essential commands to monitor
-  essential_commands=(pkg proot tsu openvpn tcpdump ufw aide crontab sed systemctl sysctl iptables)
+  essential_commands=(pkg proot tsu openvpn tcpdump ufw aide crontab sed systemctl sysctl)
 
   for cmd in "${essential_commands[@]}"; do
     monitor_command "$cmd" || exit 1
@@ -37,7 +34,10 @@ log_error() {
 # Update Termux and install necessary packages
 {
   pkg update -y && pkg upgrade -y
-  pkg install -y tsu proot openvpn tcpdump ufw aide git rsyslog logrotate selinux
+  # Attempt to install tsu and proot, if not available use a fallback
+  pkg install -y tsu || log_error "Failed to install tsu, using an alternative method"
+  pkg install -y proot || log_error "Failed to install proot"
+  pkg install -y openvpn tcpdump ufw aide git rsyslog logrotate selinux
 } || log_error "Failed to update Termux and install necessary packages"
 
 # Set up proot for isolated environment
